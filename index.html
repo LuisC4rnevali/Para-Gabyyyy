@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TE AMO 💖 - Con Música</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            touch-action: manipulation;
+        }
+        #main-text {
+            font-size: 3rem;
+            color: #ff1493;
+            text-shadow: 0 0 10px #ff69b4;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .particle {
+            position: absolute;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: float 3s ease-out infinite;
+        }
+        @keyframes float {
+            to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        #audio-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff1493;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-text">TE AMO 💖</div>
+    <button id="audio-control">♪</button>
+
+    <!-- Audio local -->
+    <audio id="song" loop>
+        <source src="cancion.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Configuración
+        const phrases = ["TE AMO", "❤️", "MI AMOR", "💘"];
+        const colors = ["#ff1493", "#ff69b4", "#ff85a2", "#ff33cc"];
+
+        // Elementos
+        const mainText = document.getElementById('main-text');
+        const audioControl = document.getElementById('audio-control');
+        const song = document.getElementById('song');
+        let audioEnabled = false;
+
+        // Control de audio
+        audioControl.addEventListener('click', () => {
+            if (audioEnabled) {
+                song.pause();
+                audioControl.textContent = "♪";
+            } else {
+                song.play();
+                audioControl.textContent = "🔊";
+            }
+            audioEnabled = !audioEnabled;
+        });
+
+        // Efectos al ritmo de la música
+        song.addEventListener('play', setupAudioAnalyser);
+
+        function setupAudioAnalyser() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+            const analyser = audioCtx.createAnalyser();
+            const source = audioCtx.createMediaElementSource(song);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            analyser.fftSize = 256;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function updateVisuals() {
+                requestAnimationFrame(updateVisuals);
+                analyser.getByteFrequencyData(dataArray);
+
+                // Detectar ritmo (frecuencias bajas)
+                const bass = dataArray.slice(0, 10).reduce((a, b) => a + b) / 10;
+                if (bass > 150) createParticles();
+            }
+            updateVisuals();
+        }
+
+        function createParticles() {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+                particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 3000);
+            }
+        }
+
+        // Efecto inicial
+        document.addEventListener('click', () => {
+            createParticles();
+        });
+    </script>
+</body>
+</html>
